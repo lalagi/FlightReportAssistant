@@ -1,0 +1,25 @@
+ai_service:
+  active_service: huggingface
+
+  huggingface:
+    models:
+      summary_model: "microsoft/phi-2"
+      category_model: "facebook/bart-large-mnli"
+      severity_model: "facebook/bart-large-mnli"
+      recommendation_model: "microsoft/phi-2"
+
+    labels:
+      categories:
+        - "Flight Ops"
+        - "Avionics"
+        - "Weather"
+        - "Human Factors"
+        - "Mechanical"
+      severities:
+        - "low"
+        - "medium"
+        - "high"
+        - "critical"
+
+  mock:
+    model_name: "MockAI-Rule-Based-v2.1"
