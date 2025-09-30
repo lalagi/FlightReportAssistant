@@ -27,27 +27,26 @@ class HuggingFaceAIService(AIService):
     HuggingFace AI service implementation using transformers pipelines.
     """
     def __init__(self, summary_model: str, category_model: str, severity_model: str, recommendation_model: str, 
-                 event_categories: List[str], severity_levels: List[str]):
+                 event_categories: List[str], severity_levels: List[str],
+                 summary_prompt_template: str, recommendation_prompt_template: str):
         logging.info("Initializing HuggingFaceAIService with dedicated models for each task...")
         
-        # Loading the summary generation model
         logging.info(f"Loading summary model: {summary_model}")
         self.summary_generator = pipeline("text-generation", model=summary_model, torch_dtype="auto", device_map="auto", trust_remote_code=True)
         
-        # Loading the category classification model
         logging.info(f"Loading category classifier: {category_model}")
         self.category_classifier = pipeline("zero-shot-classification", model=category_model)
         
-        # Loading the severity classification model
         logging.info(f"Loading severity classifier: {severity_model}")
         self.severity_classifier = pipeline("zero-shot-classification", model=severity_model)
         
-        # Loading the recommendation generation model
         logging.info(f"Loading recommendation model: {recommendation_model}")
         self.recommendation_generator = pipeline("text-generation", model=recommendation_model, torch_dtype="auto", device_map="auto", trust_remote_code=True)
         
         self.event_categories = event_categories
         self.severity_levels = severity_levels
+        self.summary_prompt_template = summary_prompt_template
+        self.recommendation_prompt_template = recommendation_prompt_template
             
         logging.info("HuggingFaceAIService initialized successfully.")
 
@@ -65,7 +64,7 @@ class HuggingFaceAIService(AIService):
         return self.severity_classifier(raw_text, candidate_labels=self.severity_levels)['labels'][0]
 
     def _generate_summary(self, raw_text: str) -> str:
-        prompt = f'<|user|>\nSummarize the following flight event in one concise sentence.\nEvent: "{raw_text}"\n<|endofuser|>\n<|assistant|>\nSummary:'
+        prompt = self.summary_prompt_template.format(raw_text=raw_text)
         result = self.summary_generator(prompt, max_new_tokens=30, pad_token_id=self.summary_generator.tokenizer.eos_token_id)
         summary = self._clean_generated_text(result[0]['generated_text'], prompt)
         if not summary:
@@ -74,12 +73,12 @@ class HuggingFaceAIService(AIService):
         return summary
 
     def _generate_recommendation(self, raw_text: str, category: str, severity: str) -> str:
-        prompt = f'<|user|>\nAnalyze the flight report and provide one concise recommendation.\nEvent: "{raw_text}"\nCategory: {category}\nSeverity: {severity}\n<|endofuser|>\n<|assistant|>\nRecommendation:'
+        prompt = self.recommendation_prompt_template.format(raw_text=raw_text, category=category, severity=severity)
         result = self.recommendation_generator(prompt, max_new_tokens=40, pad_token_id=self.recommendation_generator.tokenizer.eos_token_id)
         recommendation = self._clean_generated_text(result[0]['generated_text'], prompt)
         if not recommendation:
             logging.warning(f"Could not generate recommendation for text: '{raw_text[:100]}...'. Using fallback.")
-            return "Review system logs and monitor."
+            return "No recommendation available."
         return recommendation
 
     def process_text(self, raw_text: str) -> Dict[str, Any]:
@@ -194,13 +193,17 @@ def get_ai_service() -> AIService:
     if service_type == "huggingface":
         hf_config = service_config['huggingface']
         models = hf_config['models']
+        prompts = hf_config.get('prompts', {})
+        
         return HuggingFaceAIService(
             summary_model=models['summary_model'],
             category_model=models['category_model'],
             severity_model=models['severity_model'],
             recommendation_model=models['recommendation_model'],
             event_categories=hf_config['labels']['categories'],
-            severity_levels=hf_config['labels']['severities']
+            severity_levels=hf_config['labels']['severities'],
+            summary_prompt_template=prompts.get('summarization', 'Summarize: {raw_text}'),
+            recommendation_prompt_template=prompts.get('recommendation', 'Recommend for: {raw_text}')
         )
     elif service_type == "mock":
         return MockAIService()

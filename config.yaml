@@ -21,5 +21,23 @@ ai_service:
         - "high"
         - "critical"
 
-  mock:
-    model_name: "MockAI-Rule-Based-v2.1"
+    prompts:
+      # Available variables: {raw_text}
+      summarization: >-
+        <|user|>
+        Summarize the following flight event in one concise sentence.
+        Event: "{raw_text}"
+        <|endofuser|>
+        <|assistant|>
+        Summary:
+
+      # Available variables: {raw_text}, {category}, {severity}
+      recommendation: >-
+        <|user|>
+        Analyze the flight report and provide one concise recommendation.
+        Event: "{raw_text}"
+        Category: {category}
+        Severity: {severity}
+        <|endofuser|>
+        <|assistant|>
+        Recommendation:
