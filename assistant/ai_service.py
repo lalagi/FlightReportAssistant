@@ -15,7 +15,7 @@ class AIService(ABC):
     Every concrete AI provider must implement this class.
     """
     @abstractmethod
-    def process_text(self, raw_text: str) -> Dict[str, Any]:
+    def process_text(self, raw_event_text: str) -> Dict[str, Any]:
         """
         Processes a raw text and returns a structured dictionary
         with summary, category, severity, and recommendation.
@@ -57,38 +57,38 @@ class HuggingFaceAIService(AIService):
             generated_text = generated_text.split(stop_token)[0].strip()
         return generated_text.strip('"').strip()
 
-    def _get_category(self, raw_text: str) -> str:
-        return self.category_classifier(raw_text, candidate_labels=self.event_categories)['labels'][0]
+    def _get_category(self, raw_event_text: str) -> str:
+        return self.category_classifier(raw_event_text, candidate_labels=self.event_categories)['labels'][0]
 
-    def _get_severity(self, raw_text: str) -> str:
-        return self.severity_classifier(raw_text, candidate_labels=self.severity_levels)['labels'][0]
+    def _get_severity(self, raw_event_text: str) -> str:
+        return self.severity_classifier(raw_event_text, candidate_labels=self.severity_levels)['labels'][0]
 
-    def _generate_summary(self, raw_text: str) -> str:
-        prompt = self.summary_prompt_template.format(raw_text=raw_text)
+    def _generate_summary(self, raw_event_text: str) -> str:
+        prompt = self.summary_prompt_template.format(raw_event_text=raw_event_text)
         result = self.summary_generator(prompt, max_new_tokens=30, pad_token_id=self.summary_generator.tokenizer.eos_token_id)
         summary = self._clean_generated_text(result[0]['generated_text'], prompt)
         if not summary:
-            logging.warning(f"Could not generate summary for text: '{raw_text[:100]}...'. Using fallback.")
+            logging.warning(f"Could not generate summary for text: '{raw_event_text[:100]}...'. Using fallback.")
             return "No summary available."
         return summary
 
-    def _generate_recommendation(self, raw_text: str, category: str, severity: str) -> str:
-        prompt = self.recommendation_prompt_template.format(raw_text=raw_text, category=category, severity=severity)
+    def _generate_recommendation(self, raw_event_text: str, category: str, severity: str) -> str:
+        prompt = self.recommendation_prompt_template.format(raw_event_text=raw_event_text, category=category, severity=severity)
         result = self.recommendation_generator(prompt, max_new_tokens=40, pad_token_id=self.recommendation_generator.tokenizer.eos_token_id)
         recommendation = self._clean_generated_text(result[0]['generated_text'], prompt)
         if not recommendation:
-            logging.warning(f"Could not generate recommendation for text: '{raw_text[:100]}...'. Using fallback.")
+            logging.warning(f"Could not generate recommendation for text: '{raw_event_text[:100]}...'. Using fallback.")
             return "No recommendation available."
         return recommendation
 
-    def process_text(self, raw_text: str) -> Dict[str, Any]:
+    def process_text(self, raw_event_text: str) -> Dict[str, Any]:
         start_time = time.time()
         
         try:
-            category = self._get_category(raw_text)
-            severity = self._get_severity(raw_text)
-            summary = self._generate_summary(raw_text)
-            recommendation = self._generate_recommendation(raw_text, category, severity)
+            category = self._get_category(raw_event_text)
+            severity = self._get_severity(raw_event_text)
+            summary = self._generate_summary(raw_event_text)
+            recommendation = self._generate_recommendation(raw_event_text, category, severity)
         except Exception as e:
             logging.error(f"Error processing text with AI model: {e}")
             return {
@@ -118,10 +118,10 @@ class MockAIService(AIService):
     This class can be replaced by a real AI service (e.g., OpenAIService)
     without changing the rest of the application.
     """
-    def process_text(self, raw_text: str) -> Dict[str, Any]:
+    def process_text(self, raw_event_text: str) -> Dict[str, Any]:
         """Mocks an AI model to process raw flight event text."""
         
-        text_lower = raw_text.lower()
+        text_lower = raw_event_text.lower()
         
         # Default values
         category = "General"
@@ -155,7 +155,7 @@ class MockAIService(AIService):
             recommendation = "Add to next training session for crew resource management."
 
         # Mock summary
-        summary = f"Event involving: {raw_text[:50]}..."
+        summary = f"Event involving: {raw_event_text[:50]}..."
 
         # Mock model metadata
         model_meta = {
@@ -202,8 +202,8 @@ def get_ai_service() -> AIService:
             recommendation_model=models['recommendation_model'],
             event_categories=hf_config['labels']['categories'],
             severity_levels=hf_config['labels']['severities'],
-            summary_prompt_template=prompts.get('summarization', 'Summarize: {raw_text}'),
-            recommendation_prompt_template=prompts.get('recommendation', 'Recommend for: {raw_text}')
+            summary_prompt_template=prompts.get('summarization', 'Summarize: {raw_event_text}'),
+            recommendation_prompt_template=prompts.get('recommendation', 'Recommend for: {raw_event_text}')
         )
     elif service_type == "mock":
         return MockAIService()

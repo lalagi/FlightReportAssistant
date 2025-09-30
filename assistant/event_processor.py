@@ -17,7 +17,7 @@ def parse_ops_file(file_path: str) -> List[Dict[str, str]]:
     for item in data:
         records.append({
             "timestamp": item.get("flight_date", ""),
-            "raw_text": item.get("observation", "")
+            "raw_event_text": item.get("observation", "")
         })
     return records
 
@@ -30,7 +30,7 @@ def parse_tech_file(file_path: str) -> List[Dict[str, str]]:
     for item in data:
         records.append({
             "timestamp": item.get("log_date", ""),
-            "raw_text": item.get("entry", "")
+            "raw_event_text": item.get("entry", "")
         })
     return records
 
@@ -60,20 +60,20 @@ def process_and_store_files(file_paths: List[str]):
             raw_records = parser(file_path)
             
             for record in tqdm(raw_records, desc=f"Ingesting {os.path.basename(file_path)}", leave=False):
-                if not record["raw_text"]:
+                if not record["raw_event_text"]:
                     continue
 
-                if db_handler.report_exists(record["timestamp"], record["raw_text"]):
-                    logging.warning(f"Skipping existing record: {record['raw_text'][:50]}...")
+                if db_handler.report_exists(record["timestamp"], record["raw_event_text"]):
+                    logging.warning(f"Skipping existing record: {record['raw_event_text'][:50]}...")
                     continue
 
-                ai_results = ai_processor.process_text(record["raw_text"])
+                ai_results = ai_processor.process_text(record["raw_event_text"])
                 
                 normalized_record = {
                     "id": str(uuid.uuid4()),
                     "timestamp": record["timestamp"],
                     "source": os.path.basename(file_path),
-                    "raw_text": record["raw_text"],
+                    "raw_event_text": record["raw_event_text"],
                     "summary": ai_results["summary"],
                     "category": ai_results["category"],
                     "severity": ai_results["severity"],

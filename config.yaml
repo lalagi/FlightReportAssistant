@@ -1,5 +1,6 @@
 ai_service:
-  active_service: huggingface
+  # Available services: huggingface, mock
+  active_service: mock
 
   huggingface:
     models:
@@ -22,22 +23,29 @@ ai_service:
         - "critical"
 
     prompts:
-      # Available variables: {raw_text}
+      # Available variables: {raw_event_text}
       summarization: >-
         <|user|>
         Summarize the following flight event in one concise sentence.
-        Event: "{raw_text}"
+        Event: "{raw_event_text}"
         <|endofuser|>
         <|assistant|>
         Summary:
 
-      # Available variables: {raw_text}, {category}, {severity}
+      # Available variables: {raw_event_text}, {category}, {severity}
       recommendation: >-
         <|user|>
         Analyze the flight report and provide one concise recommendation.
-        Event: "{raw_text}"
+        Event: "{raw_event_text}"
         Category: {category}
         Severity: {severity}
         <|endofuser|>
         <|assistant|>
         Recommendation:
+
+database:
+  # Available handlers: sqlite
+  active_handler: sqlite
+
+  sqlite:
+    db_file: "flight_reports.db"

@@ -3,6 +3,7 @@ import os
 import logging
 from typing import List, Dict, Any, Tuple, Optional
 from abc import ABC, abstractmethod
+import yaml
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
@@ -23,7 +24,7 @@ class DatabaseHandler(ABC):
         pass
 
     @abstractmethod
-    def report_exists(self, timestamp: str, raw_text: str) -> bool:
+    def report_exists(self, timestamp: str, raw_event_text: str) -> bool:
         """Checks if a report with the same timestamp and raw text already exists."""
         pass
 
@@ -73,13 +74,13 @@ class SQLiteHandler(DatabaseHandler):
                     id TEXT PRIMARY KEY,
                     timestamp TEXT NOT NULL,
                     source TEXT NOT NULL,
-                    raw_text TEXT NOT NULL,
+                    raw_event_text TEXT NOT NULL,
                     summary TEXT,
                     category TEXT,
                     severity TEXT,
                     recommendation TEXT,
                     model_meta TEXT,
-                    UNIQUE(timestamp, raw_text)
+                    UNIQUE(timestamp, raw_event_text)
                 )
                 """)
                 conn.commit()
@@ -100,20 +101,20 @@ class SQLiteHandler(DatabaseHandler):
             with self._get_connection() as conn:
                 cursor = conn.cursor()
                 cursor.execute("""
-                INSERT INTO flight_reports (id, timestamp, source, raw_text, summary, category, severity, recommendation, model_meta)
-                VALUES (:id, :timestamp, :source, :raw_text, :summary, :category, :severity, :recommendation, :model_meta)
+                INSERT INTO flight_reports (id, timestamp, source, raw_event_text, summary, category, severity, recommendation, model_meta)
+                VALUES (:id, :timestamp, :source, :raw_event_text, :summary, :category, :severity, :recommendation, :model_meta)
                 """, report)
                 conn.commit()
         except sqlite3.IntegrityError:
             # This is expected for duplicates and is handled silently.
-            logging.debug(f"Duplicate record not added: {report['raw_text'][:50]}...")
+            logging.debug(f"Duplicate record not added: {report['raw_event_text'][:50]}...")
             pass
 
-    def report_exists(self, timestamp: str, raw_text: str) -> bool:
+    def report_exists(self, timestamp: str, raw_event_text: str) -> bool:
         """Checks if a report already exists in the database."""
         with self._get_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute("SELECT 1 FROM flight_reports WHERE timestamp = ? AND raw_text = ?", (timestamp, raw_text))
+            cursor.execute("SELECT 1 FROM flight_reports WHERE timestamp = ? AND raw_event_text = ?", (timestamp, raw_event_text))
             return cursor.fetchone() is not None
 
     def get_stats_by_category(self) -> List[Tuple[str, int]]:
@@ -141,10 +142,31 @@ class SQLiteHandler(DatabaseHandler):
             row = cursor.fetchone()
             return dict(row) if row else None
 
+def load_config(config_path: str = 'config.yaml') -> Dict[str, Any]:
+    """Loads the YAML configuration file."""
+    try:
+        with open(config_path, 'r') as f:
+            return yaml.safe_load(f)
+    except FileNotFoundError:
+        logging.error(f"Configuration file not found at {config_path}")
+        raise
+    except yaml.YAMLError as e:
+        logging.error(f"Error parsing YAML file: {e}")
+        raise
+
 def get_database_handler() -> DatabaseHandler:
     """
-    Factory function to get the current database handler.
-    This is where you could switch to another implementation,
-    e.g., based on a config file.
+    Factory function to get the current database handler based on config.
     """
-    return SQLiteHandler()
+    config = load_config()
+    handler_type = config.get('database', {}).get('active_handler', 'sqlite')
+
+    if handler_type == 'sqlite':
+        db_config = config.get('database', {}).get('sqlite', {})
+        db_file = db_config.get('db_file', 'flight_reports.db')
+        return SQLiteHandler(db_file=db_file)
+    # Here you could add other database handlers as well
+    # elif handler_type == 'postgresql':
+    #     return PostgreSQLHandler(**config['database']['postgresql'])
+    else:
+        raise ValueError(f"Unknown database handler type: {handler_type}")
