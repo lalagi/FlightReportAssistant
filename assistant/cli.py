@@ -9,7 +9,8 @@ def cli():
 @cli.command()
 def init():
     """Initializes the SQLite database."""
-    database_handler.init_db()
+    db = database_handler.get_database_handler()
+    db.init_db()
 
 @cli.command()
 @click.argument('files', nargs=-1, type=click.Path(exists=True))
@@ -24,8 +25,9 @@ def ingest(files):
 @click.argument('query_type')
 def stats(query_type):
     """Shows statistics. Currently supports: category"""
+    db = database_handler.get_database_handler()
     if query_type == "category":
-        results = database_handler.get_stats_by_category()
+        results = db.get_stats_by_category()
         if not results:
             click.echo("No data found. Ingest some files first.")
             return
@@ -40,7 +42,8 @@ def stats(query_type):
 @click.option('--severity', required=True, type=click.Choice(['low', 'medium', 'high', 'critical'], case_sensitive=False))
 def list(severity):
     """Lists reports by severity."""
-    results = database_handler.list_reports_by_severity(severity)
+    db = database_handler.get_database_handler()
+    results = db.list_reports_by_severity(severity)
     if not results:
         click.echo(f"No reports found with severity '{severity}'.")
         return
@@ -57,7 +60,8 @@ def list(severity):
 @click.option('--id', 'report_id', required=True, type=str, help="The ID of the report to show.")
 def show(report_id):
     """Shows the full details of a specific report."""
-    report = database_handler.get_report_by_id(report_id)
+    db = database_handler.get_database_handler()
+    report = db.get_report_by_id(report_id)
     if not report:
         click.echo(f"Error: Report with ID '{report_id}' not found.", err=True)
         return

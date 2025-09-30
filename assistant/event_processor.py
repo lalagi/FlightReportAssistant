@@ -44,8 +44,8 @@ def process_and_store_files(file_paths: List[str]):
     Processes a list of input files, normalizes their content,
     enriches it with AI, and stores it in the database.
     """
-    # Get the AI service instance
     ai_processor = ai_service.get_ai_service()
+    db_handler = database_handler.get_database_handler()
     
     print(f"Starting ingestion for {len(file_paths)} files using {type(ai_processor).__name__}...")
     total_new_records = 0
@@ -59,15 +59,12 @@ def process_and_store_files(file_paths: List[str]):
                 if not record["raw_text"]:
                     continue
 
-                # 1. Check for duplicates before processing with AI
-                if database_handler.report_exists(record["timestamp"], record["raw_text"]):
+                if db_handler.report_exists(record["timestamp"], record["raw_text"]):
                     print(f"Skipping existing record: {record['raw_text'][:50]}...")
                     continue
 
-                # 2. Process with AI model
                 ai_results = ai_processor.process_text(record["raw_text"])
                 
-                # 3. Normalize the record
                 normalized_record = {
                     "id": str(uuid.uuid4()),
                     "timestamp": record["timestamp"],
@@ -80,8 +77,7 @@ def process_and_store_files(file_paths: List[str]):
                     "model_meta": ai_results["model_meta"]
                 }
                 
-                # 4. Store the record
-                database_handler.add_event(normalized_record)
+                db_handler.add_event(normalized_record)
                 total_new_records += 1
 
             print(f"Successfully processed {len(raw_records)} records from {file_path}")
