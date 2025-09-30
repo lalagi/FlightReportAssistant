@@ -47,7 +47,7 @@ def process_and_store_files(file_paths: List[str]):
     ai_processor = ai_service.get_ai_service()
     db_handler = database_handler.get_database_handler()
     
-    print(f"Starting ingestion for {len(file_paths)} files using {type(ai_processor).__name__}...")
+    print(f"Starting ingestion for {len(file_paths)} file(s) using {type(ai_processor).__name__}...")
     total_new_records = 0
     
     for file_path in file_paths:

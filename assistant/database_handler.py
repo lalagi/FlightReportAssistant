@@ -1,7 +1,10 @@
 import sqlite3
 import os
+import logging
 from typing import List, Dict, Any, Tuple, Optional
 from abc import ABC, abstractmethod
+
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 class DatabaseHandler(ABC):
     """
@@ -62,7 +65,7 @@ class SQLiteHandler(DatabaseHandler):
             return
 
         if not os.path.exists(self.db_file):
-            print("Database not found. Initializing...")
+            logging.info("Database not found. Initializing...")
             with self._get_connection() as conn:
                 cursor = conn.cursor()
                 cursor.execute("""
@@ -80,14 +83,14 @@ class SQLiteHandler(DatabaseHandler):
                 )
                 """)
                 conn.commit()
-            print("Database initialized successfully.")
+            logging.info("Database initialized successfully.")
         
         self._initialized = True
     
     def init_db(self):
         """Explicit command to initialize the database."""
         if os.path.exists(self.db_file):
-            print("Database already exists.")
+            logging.info("Database already exists.")
         else:
             self._ensure_db_initialized()
 
@@ -103,6 +106,7 @@ class SQLiteHandler(DatabaseHandler):
                 conn.commit()
         except sqlite3.IntegrityError:
             # This is expected for duplicates and is handled silently.
+            logging.debug(f"Duplicate record not added: {report['raw_text'][:50]}...")
             pass
 
     def report_exists(self, timestamp: str, raw_text: str) -> bool:
