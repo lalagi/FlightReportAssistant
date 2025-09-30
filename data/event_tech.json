@@ -1,0 +1,22 @@
+[
+    {"timestamp_utc": "2025-09-29T10:05:12Z", "log_entry": "Engine #2 EGT reading was 5 degrees above normal during cruise.", "system_id": "ENG-02"},
+    {"timestamp_utc": "2025-09-29T10:15:30Z", "log_entry": "FMS failed to load SID from database, manual entry required.", "system_id": "AV-FMS-01"},
+    {"timestamp_utc": "2025-09-29T10:25:00Z", "log_entry": "Left main landing gear tire pressure sensor showing intermittent low values.", "system_id": "LG-L-01"},
+    {"timestamp_utc": "2025-09-29T10:30:45Z", "log_entry": "APU generator fault light illuminated for 7 seconds post-shutdown.", "system_id": "APU-GEN-01"},
+    {"timestamp_utc": "2025-09-29T10:40:00Z", "log_entry": "Cabin pressure controller B reported an error, switched to A.", "system_id": "ECS-CPC-B"},
+    {"timestamp_utc": "2025-09-29T10:55:10Z", "log_entry": "TCAS advisory 'TRAFFIC' with no visual confirmation.", "system_id": "AV-TCAS-01"},
+    {"timestamp_utc": "2025-09-29T11:05:00Z", "log_entry": "Wing anti-ice system valve on the right side was slow to open.", "system_id": "ICE-RW-01"},
+    {"timestamp_utc": "2025-09-29T11:15:00Z", "log_entry": "NAV display on captain's side was blank for 5s during flight.", "system_id": "AV-NAV-C"},
+    {"timestamp_utc": "2025-09-29T11:20:20Z", "log_entry": "Fuel pump in center tank shows fluctuating output pressure.", "system_id": "FUEL-CTR-01"},
+    {"timestamp_utc": "2025-09-29T11:30:00Z", "log_entry": "Error message 'CONFIG' on EICAS during takeoff roll.", "system_id": "AV-EICAS-01"},
+    {"timestamp_utc": "2025-09-29T11:45:00Z", "log_entry": "Emergency locator transmitter self-test failed.", "system_id": "SURV-ELT-01"},
+    {"timestamp_utc": "2025-09-29T11:55:55Z", "log_entry": "VHF Comm radio 2 produced static noise.", "system_id": "COM-VHF-2"},
+    {"timestamp_utc": "2025-09-29T12:10:00Z", "log_entry": "Galley oven circuit breaker tripped.", "system_id": "CAB-GAL-01"},
+    {"timestamp_utc": "2025-09-29T12:20:00Z", "log_entry": "GPWS 'TERRAIN' warning, confirmed false alert due to database issue.", "system_id": "AV-GPWS-01"},
+    {"timestamp_utc": "2025-09-29T12:30:00Z", "log_entry": "Flight director bars disappeared for a few seconds.", "system_id": "AV-FD-01"},
+    {"timestamp_utc": "2025-09-29T12:40:00Z", "log_entry": "High vibration detected on engine #1 fan blade, requires inspection.", "system_id": "ENG-01"},
+    {"timestamp_utc": "2025-09-29T12:45:15Z", "log_entry": "Slats extension was slower than the flaps.", "system_id": "FCTL-SLAT-01"},
+    {"timestamp_utc": "2025-09-29T12:50:00Z", "log_entry": "Oxygen mask microphone in the cockpit is not working.", "system_id": "SURV-OXY-C"},
+    {"timestamp_utc": "2025-09-29T13:00:00Z", "log_entry": "Received 'DOOR NOT CLOSED' indication for forward cargo.", "system_id": "DOOR-CRG-FWD"},
+    {"timestamp_utc": "2025-09-29T13:10:00Z", "log_entry": "Engine #1 suffered a bird strike on final approach. Visible damage.", "system_id": "ENG-01"}
+]

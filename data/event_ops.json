@@ -1,0 +1,22 @@
+[
+    {"event_time": "2025-09-28 14:30:00", "event_description": "Takeoff roll felt sluggish, significantly longer than calculated."},
+    {"event_time": "2025-09-28 14:35:10", "event_description": "Unexpected turbulence shortly after takeoff, moderate intensity."},
+    {"event_time": "2025-09-28 14:40:25", "event_description": "Co-pilot reported feeling unwell but continued duties."},
+    {"event_time": "2025-09-28 14:55:00", "event_description": "During climb, minor disagreement on altitude clearance with ATC."},
+    {"event_time": "2025-09-28 15:10:15", "event_description": "Autopilot disengaged unexpectedly for a brief moment."},
+    {"event_time": "2025-09-28 15:22:00", "event_description": "Cabin crew reported a passenger dispute in row 15."},
+    {"event_time": "2025-09-28 15:30:00", "event_description": "Weather radar showed storm cell developing faster than forecast."},
+    {"event_time": "2025-09-28 15:45:50", "event_description": "Unidentified drone spotted at a safe distance, reported to ATC."},
+    {"event_time": "2025-09-28 16:00:00", "event_description": "Slight smell of ozone in the cockpit, dissipated quickly."},
+    {"event_time": "2025-09-28 16:15:30", "event_description": "NAV display on P2 side flickered once."},
+    {"event_time": "2025-09-28 16:30:00", "event_description": "Difficulty establishing stable communication with ground control on secondary freq."},
+    {"event_time": "2025-09-28 16:45:00", "event_description": "Automated landing system advisory for wind shear on approach."},
+    {"event_time": "2025-09-28 16:55:10", "event_description": "Go-around initiated due to occupied runway."},
+    {"event_time": "2025-09-28 17:05:00", "event_description": "Hard landing, but within limits. Inspection recommended."},
+    {"event_time": "2025-09-28 17:10:00", "event_description": "Braking action felt weak on the wet runway."},
+    {"event_time": "2025-09-28 17:15:20", "event_description": "Passenger medical issue, requested paramedics on arrival."},
+    {"event_time": "2025-09-28 17:20:00", "event_description": "Ground crew communication was unclear during taxiing."},
+    {"event_time": "2025-09-28 17:25:00", "event_description": "Final checklist interrupted by a non-critical alert."},
+    {"event_time": "2025-09-28 17:30:00", "event_description": "Minor hydraulic pressure fluctuation noted on the right system."},
+    {"event_time": "2025-09-28 17:35:00", "event_description": "Discovered a coffee spill near the center console after landing."}
+]
