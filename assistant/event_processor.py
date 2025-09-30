@@ -12,8 +12,8 @@ def parse_ops_file(file_path: str) -> List[Dict[str, str]]:
     records = []
     for item in data:
         records.append({
-            "timestamp": item.get("event_time", ""),
-            "raw_text": item.get("event_description", "")
+            "timestamp": item.get("flight_date", ""),
+            "raw_text": item.get("observation", "")
         })
     return records
 
@@ -25,8 +25,8 @@ def parse_tech_file(file_path: str) -> List[Dict[str, str]]:
     records = []
     for item in data:
         records.append({
-            "timestamp": item.get("timestamp_utc", ""),
-            "raw_text": item.get("log_entry", "")
+            "timestamp": item.get("log_date", ""),
+            "raw_text": item.get("entry", "")
         })
     return records
 
