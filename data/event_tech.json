@@ -18,5 +18,5 @@
     {"log_date": "2025-07-21T11:35:30Z", "entry": "ELT battery past its replacement date.", "component": "Safety"},
     {"log_date": "2025-07-21T11:45:00Z", "entry": "Landing light bulb burnt out.", "component": "Electrical"},
     {"log_date": "2025-07-21T11:55:00Z", "entry": "Seatbelt webbing is frayed.", "component": "Safety"},
-    {"log_date": "2025-07-21T12:05:00Z", "entry": "Vacuum pump suction gauge reading is low.", "component": "Instruments"}
+    {"log_date": "2025-07-21T12:05:00Z", "entry": "Vacuum gauge reading is low.", "component": "Instruments"}
 ]
