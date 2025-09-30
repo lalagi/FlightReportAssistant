@@ -1,8 +1,12 @@
 import json
 import os
 import uuid
+import logging
 from typing import List, Dict
+from tqdm import tqdm
 from . import ai_service, database_handler
+
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 def parse_ops_file(file_path: str) -> List[Dict[str, str]]:
     """Parses the operational events JSON file."""
@@ -47,7 +51,7 @@ def process_and_store_files(file_paths: List[str]):
     ai_processor = ai_service.get_ai_service()
     db_handler = database_handler.get_database_handler()
     
-    print(f"Starting ingestion for {len(file_paths)} file(s) using {type(ai_processor).__name__}...")
+    logging.info(f"Starting ingestion for {len(file_paths)} file(s) using {type(ai_processor).__name__}...")
     total_new_records = 0
     
     for file_path in file_paths:
@@ -55,12 +59,12 @@ def process_and_store_files(file_paths: List[str]):
             parser = get_parser(file_path)
             raw_records = parser(file_path)
             
-            for record in raw_records:
+            for record in tqdm(raw_records, desc=f"Ingesting {os.path.basename(file_path)}", leave=False):
                 if not record["raw_text"]:
                     continue
 
                 if db_handler.report_exists(record["timestamp"], record["raw_text"]):
-                    print(f"Skipping existing record: {record['raw_text'][:50]}...")
+                    logging.warning(f"Skipping existing record: {record['raw_text'][:50]}...")
                     continue
 
                 ai_results = ai_processor.process_text(record["raw_text"])
@@ -80,9 +84,9 @@ def process_and_store_files(file_paths: List[str]):
                 db_handler.add_event(normalized_record)
                 total_new_records += 1
 
-            print(f"Successfully processed {len(raw_records)} records from {file_path}")
+            logging.info(f"Successfully processed {len(raw_records)} records from {file_path}")
 
         except Exception as e:
-            print(f"Error processing file {file_path}: {e}")
+            logging.error(f"Error processing file {file_path}: {e}", exc_info=True)
             
-    print(f"\nIngestion complete. Added {total_new_records} new records to the database.")
+    logging.info(f"Ingestion complete. Added {total_new_records} new records to the database.")
