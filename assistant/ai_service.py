@@ -1,98 +1,116 @@
 import time
-from typing import Dict, Any
+import logging
+import yaml
+from typing import Dict, Any, List
 from abc import ABC, abstractmethod
 
-from transformers import pipeline, logging
+from transformers import pipeline, logging as transformers_logging
 
-logging.set_verbosity_error()
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+transformers_logging.set_verbosity_error()
 
 class AIService(ABC):
-    """Abstract Base Class for AI services."""
-    
+    """
+    Abstract Base Class (Interface) for AI services.
+    Every concrete AI provider must implement this class.
+    """
     @abstractmethod
     def process_text(self, raw_text: str) -> Dict[str, Any]:
         """
-        Processes raw text and returns a dictionary with summary, category, severity, and recommendation.
+        Processes a raw text and returns a structured dictionary
+        with summary, category, severity, and recommendation.
         """
         pass
 
 class HuggingFaceAIService(AIService):
     """
-    An AI service implementation that uses a single advanced Hugging Face transformer (phi-2)
-    to generate all required outputs based on specific prompts.
+    HuggingFace AI service implementation using transformers pipelines.
     """
-    def __init__(self):
-        print("Initializing HuggingFaceAIService...")
-        print("Loading models, this may take a few minutes and require significant memory...")
+    def __init__(self, summary_model: str, category_model: str, severity_model: str, recommendation_model: str, 
+                 event_categories: List[str], severity_levels: List[str]):
+        logging.info("Initializing HuggingFaceAIService with dedicated models for each task...")
         
-        # Load the zero-shot classification model for category and severity detection
-        self.classifier = pipeline("zero-shot-classification", model="facebook/bart-large-mnli")
+        # Loading the summary generation model
+        logging.info(f"Loading summary model: {summary_model}")
+        self.summary_generator = pipeline("text-generation", model=summary_model, torch_dtype="auto", device_map="auto", trust_remote_code=True)
         
-        # Load the text generation model for summary and recommendation
-        self.generator = pipeline(
-            "text-generation", 
-            model="microsoft/phi-2",
-            torch_dtype="auto",
-            device_map="auto",
-            trust_remote_code=True
-        )
+        # Loading the category classification model
+        logging.info(f"Loading category classifier: {category_model}")
+        self.category_classifier = pipeline("zero-shot-classification", model=category_model)
         
-        self.event_categories = ["Flight Ops", "Avionics", "Weather", "Human Factors", "Mechanical"]
-        self.severity_levels = ["low", "medium", "high", "critical"]
+        # Loading the severity classification model
+        logging.info(f"Loading severity classifier: {severity_model}")
+        self.severity_classifier = pipeline("zero-shot-classification", model=severity_model)
         
-        print("HuggingFaceAIService initialized successfully.")
+        # Loading the recommendation generation model
+        logging.info(f"Loading recommendation model: {recommendation_model}")
+        self.recommendation_generator = pipeline("text-generation", model=recommendation_model, torch_dtype="auto", device_map="auto", trust_remote_code=True)
+        
+        self.event_categories = event_categories
+        self.severity_levels = severity_levels
+            
+        logging.info("HuggingFaceAIService initialized successfully.")
 
     def _clean_generated_text(self, full_output: str, prompt: str) -> str:
-        """Helper function to clean the generated text from the model."""
-        # 1. Cut off the prompt from the output
         generated_text = full_output[len(prompt):].strip()
-        
-        # 2. Remove unnecessary stop tokens
         stop_token = "<|endofassistant|>"
         if stop_token in generated_text:
             generated_text = generated_text.split(stop_token)[0].strip()
-            
-        # 3. Fine-tuning: remove unnecessary quotes and leading characters
         return generated_text.strip('"').strip()
 
+    def _get_category(self, raw_text: str) -> str:
+        return self.category_classifier(raw_text, candidate_labels=self.event_categories)['labels'][0]
+
+    def _get_severity(self, raw_text: str) -> str:
+        return self.severity_classifier(raw_text, candidate_labels=self.severity_levels)['labels'][0]
+
+    def _generate_summary(self, raw_text: str) -> str:
+        prompt = f'<|user|>\nSummarize the following flight event in one concise sentence.\nEvent: "{raw_text}"\n<|endofuser|>\n<|assistant|>\nSummary:'
+        result = self.summary_generator(prompt, max_new_tokens=30, pad_token_id=self.summary_generator.tokenizer.eos_token_id)
+        summary = self._clean_generated_text(result[0]['generated_text'], prompt)
+        if not summary:
+            logging.warning(f"Could not generate summary for text: '{raw_text[:100]}...'. Using fallback.")
+            return "No summary available."
+        return summary
+
+    def _generate_recommendation(self, raw_text: str, category: str, severity: str) -> str:
+        prompt = f'<|user|>\nAnalyze the flight report and provide one concise recommendation.\nEvent: "{raw_text}"\nCategory: {category}\nSeverity: {severity}\n<|endofuser|>\n<|assistant|>\nRecommendation:'
+        result = self.recommendation_generator(prompt, max_new_tokens=40, pad_token_id=self.recommendation_generator.tokenizer.eos_token_id)
+        recommendation = self._clean_generated_text(result[0]['generated_text'], prompt)
+        if not recommendation:
+            logging.warning(f"Could not generate recommendation for text: '{raw_text[:100]}...'. Using fallback.")
+            return "Review system logs and monitor."
+        return recommendation
+
     def process_text(self, raw_text: str) -> Dict[str, Any]:
-        """Processes raw text using dedicated prompts for each generation task."""
         start_time = time.time()
         
-        # 1. Determine category and severity (this remains the old way)
-        category = self.classifier(raw_text, candidate_labels=self.event_categories)['labels'][0]
-        severity = self.classifier(raw_text, candidate_labels=self.severity_levels)['labels'][0]
-        
-        # 2. Generate summary with the phi-2 model
-        summary_prompt = f'<|user|>\nSummarize the following flight event in one concise sentence.\nEvent: "{raw_text}"\n<|endofuser|>\n<|assistant|>\nSummary:'
-        summary_result = self.generator(summary_prompt, max_new_tokens=30, pad_token_id=self.generator.tokenizer.eos_token_id)
-        summary = self._clean_generated_text(summary_result[0]['generated_text'], summary_prompt)
-        if not summary: # Fallback
-            summary = "No summary available."
-
-        # 3. Generate recommendation with the phi-2 model
-        rec_prompt = f'<|user|>\nAnalyze the flight report and provide one concise recommendation.\nEvent: "{raw_text}"\nCategory: {category}\nSeverity: {severity}\n<|endofuser|>\n<|assistant|>\nRecommendation:'
-        rec_result = self.generator(rec_prompt, max_new_tokens=40, pad_token_id=self.generator.tokenizer.eos_token_id)
-        recommendation = self._clean_generated_text(rec_result[0]['generated_text'], rec_prompt)
-        if not recommendation: # Fallback
-            recommendation = "Review system logs and monitor."
+        try:
+            category = self._get_category(raw_text)
+            severity = self._get_severity(raw_text)
+            summary = self._generate_summary(raw_text)
+            recommendation = self._generate_recommendation(raw_text, category, severity)
+        except Exception as e:
+            logging.error(f"Error processing text with AI model: {e}")
+            return {
+                "summary": "AI processing failed.", "category": "Unknown", "severity": "Unknown",
+                "recommendation": "Manual review required.", "model_meta": str({"error": str(e)})
+            }
 
         end_time = time.time()
-        processing_time = (end_time - start_time) * 1000
-
+        
         model_meta = {
-            "classifier_model": self.classifier.model.name_or_path,
-            "generator_model": self.generator.model.name_or_path,
-            "processing_time_ms": round(processing_time),
+            "summary_model": self.summary_generator.model.name_or_path,
+            "category_model": self.category_classifier.model.name_or_path,
+            "severity_model": self.severity_classifier.model.name_or_path,
+            "recommendation_model": self.recommendation_generator.model.name_or_path,
+            "processing_time_ms": round((end_time - start_time) * 1000),
             "timestamp": end_time
         }
 
         return {
-            "summary": summary,
-            "category": category,
-            "severity": severity,
-            "recommendation": recommendation,
-            "model_meta": str(model_meta)
+            "summary": summary, "category": category, "severity": severity,
+            "recommendation": recommendation, "model_meta": str(model_meta)
         }
 
 class MockAIService(AIService):
@@ -142,7 +160,7 @@ class MockAIService(AIService):
 
         # Mock model metadata
         model_meta = {
-            "model_name": "MockAI-Rule-Based-v2.1", # Version up
+            "model_name": "MockAI-Rule-Based-v2.1",
             "processing_time_ms": 150,
             "timestamp": time.time()
         }
@@ -156,5 +174,35 @@ class MockAIService(AIService):
         }
     
 def get_ai_service() -> AIService:
-    """Factory function to get the current AI service."""
-    return HuggingFaceAIService()
+    """
+    Factory function that retrieves the current AI service based on config.yaml.
+    """
+    try:
+        with open('config.yaml', 'r') as f:
+            config = yaml.safe_load(f)
+    except FileNotFoundError:
+        logging.error("Configuration file (config.yaml) not found. Aborting.")
+        raise
+    except yaml.YAMLError as e:
+        logging.error(f"Error parsing configuration file: {e}. Aborting.")
+        raise
+
+    service_config = config.get('ai_service', {})
+    service_type = service_config.get('active_service', 'mock')
+    logging.info(f"Selected AI service type from config: {service_type}")
+
+    if service_type == "huggingface":
+        hf_config = service_config['huggingface']
+        models = hf_config['models']
+        return HuggingFaceAIService(
+            summary_model=models['summary_model'],
+            category_model=models['category_model'],
+            severity_model=models['severity_model'],
+            recommendation_model=models['recommendation_model'],
+            event_categories=hf_config['labels']['categories'],
+            severity_levels=hf_config['labels']['severities']
+        )
+    elif service_type == "mock":
+        return MockAIService()
+    else:
+        raise ValueError(f"Unknown AI service type in config: '{service_type}'")
