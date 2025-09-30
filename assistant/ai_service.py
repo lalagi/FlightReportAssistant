@@ -200,8 +200,8 @@ def get_ai_service() -> AIService:
             category_model=models['category_model'],
             severity_model=models['severity_model'],
             recommendation_model=models['recommendation_model'],
-            event_categories=hf_config['labels']['categories'],
-            severity_levels=hf_config['labels']['severities'],
+            event_categories=service_config['labels']['categories'],
+            severity_levels=service_config['labels']['severities'],
             summary_prompt_template=prompts.get('summarization', 'Summarize: {raw_event_text}'),
             recommendation_prompt_template=prompts.get('recommendation', 'Recommend for: {raw_event_text}')
         )

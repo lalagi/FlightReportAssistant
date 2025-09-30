@@ -9,19 +9,6 @@ ai_service:
       severity_model: "facebook/bart-large-mnli"
       recommendation_model: "microsoft/phi-2"
 
-    labels:
-      categories:
-        - "Flight Ops"
-        - "Avionics"
-        - "Weather"
-        - "Human Factors"
-        - "Mechanical"
-      severities:
-        - "low"
-        - "medium"
-        - "high"
-        - "critical"
-
     prompts:
       # Available variables: {raw_event_text}
       summarization: >-
@@ -42,6 +29,19 @@ ai_service:
         <|endofuser|>
         <|assistant|>
         Recommendation:
+
+  labels:
+    categories:
+      - "Flight Ops"
+      - "Avionics"
+      - "Weather"
+      - "Human Factors"
+      - "Mechanical"
+    severities:
+      - "low"
+      - "medium"
+      - "high"
+      - "critical"
 
 database:
   # Available handlers: sqlite
