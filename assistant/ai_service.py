@@ -29,10 +29,18 @@ class MockAIService(AIService):
         recommendation = "Monitor closely."
         
         # Rule-based classification
-        if any(keyword in text_lower for keyword in ["engine", "hydraulic", "apu", "pressure", "vibration"]):
+        if any(keyword in text_lower for keyword in ["bird strike", "damage", "fire"]):
+            category = "Critical Failure"
+            severity = "critical"
+            recommendation = "Ground the aircraft. Full engineering review required."
+        elif any(keyword in text_lower for keyword in ["engine", "hydraulic", "apu", "pressure", "vibration"]):
             category = "Mechanical"
             severity = "high"
             recommendation = "Immediate maintenance check required."
+        elif any(keyword in text_lower for keyword in ["landing gear", "tire", "brakes", "slats"]):
+            category = "Flight Controls"
+            severity = "high"
+            recommendation = "Inspect relevant flight control systems before next flight."
         elif any(keyword in text_lower for keyword in ["nav", "display", "autopilot", "fms", "sensor", "avionics", "radio"]):
             category = "Avionics"
             severity = "medium"
@@ -45,21 +53,13 @@ class MockAIService(AIService):
             category = "Human Factors"
             severity = "low"
             recommendation = "Add to next training session for crew resource management."
-        elif any(keyword in text_lower for keyword in ["landing gear", "tire", "brakes", "slats"]):
-            category = "Flight Controls"
-            severity = "high"
-            recommendation = "Inspect relevant flight control systems before next flight."
-        elif any(keyword in text_lower for keyword in ["bird strike", "damage", "fire"]):
-            category = "Critical Failure"
-            severity = "critical"
-            recommendation = "Ground the aircraft. Full engineering review required."
 
         # Mock summary
         summary = f"Event involving: {raw_text[:50]}..."
 
         # Mock model metadata
         model_meta = {
-            "model_name": "MockAI-Rule-Based-v2.0", # Version up
+            "model_name": "MockAI-Rule-Based-v2.1", # Version up
             "processing_time_ms": 150,
             "timestamp": time.time()
         }
