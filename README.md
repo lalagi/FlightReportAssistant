@@ -178,5 +178,4 @@ While the current implementation serves as a functional proof-of-concept, severa
     -   **Fine-Tuning:** The classification model (`facebook/bart-large-mnli`) could be fine-tuned on a domain-specific dataset of flight reports. Techniques like **LoRA (Low-Rank Adaptation)** would allow for efficient tuning, significantly improving the model's accuracy in understanding aviation-specific terminology and context.
     -   **Model Selection:** A more thorough evaluation could be conducted to select smaller, faster, or more accurate models for each specific task (summary, classification, recommendation).
 
--   **Sophisticated Prompt Management:** Storing prompt templates directly in `config.yaml` is practical for simple cases. A more robust solution would involve a dedicated prompt management system. This could include:
-    -   Using a templating engine like Jinja2 for more complex prompt logic.
+-   **Sophisticated Prompt Management:** Storing prompt templates directly in `config.yaml` is practical for simple cases. Using a templating engine like Jinja2 for more complex prompt logic might be beneficial.
