@@ -2,7 +2,7 @@ import json
 import os
 import uuid
 import logging
-from typing import List, Dict
+from typing import List, Dict, Callable
 from tqdm import tqdm
 from .ai_service import AIService
 from .database_handler import DatabaseHandler
@@ -44,17 +44,20 @@ def parse_tech_file(file_path: str) -> List[Dict[str, str]]:
     return records
 
 
-def get_parser(file_path: str):
-    """Selects the correct parser based on the filename."""
-    if "ops" in os.path.basename(file_path):
-        return parse_ops_file
-    elif "tech" in os.path.basename(file_path):
-        return parse_tech_file
-    # elif "other_type" in os.path.basename(file_path):
-    #     # Here we could process other types of files
-    #     pass
-    else:
-        raise ValueError(f"No parser available for file: {file_path}")
+PARSER_STRATEGY: Dict[str, Callable[[str], List[Dict[str, str]]]] = {
+    "ops": parse_ops_file,
+    "tech": parse_tech_file,
+    # Add new parsers here, e.g., "sim": parse_simulator_log
+}
+
+
+def get_parser(file_path: str) -> Callable[[str], List[Dict[str, str]]]:
+    """Selects the correct parser based on the filename using a strategy map."""
+    base_name = os.path.basename(file_path)
+    for keyword, parser_func in PARSER_STRATEGY.items():
+        if keyword in base_name:
+            return parser_func
+    raise ValueError(f"No parser available for file: {file_path}")
 
 
 def process_and_store_files(
