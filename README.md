@@ -160,7 +160,7 @@ To check the code for any linting errors or style violations, run the following 
 ruff check .
 ```
 
-### Checking Code
+### Formatting Code
 
 To automatically format all Python files according to the project's style guide, run:
 
