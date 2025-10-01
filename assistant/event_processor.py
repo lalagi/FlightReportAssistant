@@ -46,14 +46,11 @@ def get_parser(file_path: str):
     else:
         raise ValueError(f"No parser available for file: {file_path}")
 
-def process_and_store_files(file_paths: List[str]):
+def process_and_store_files(file_paths: List[str], db_handler: database_handler.DatabaseHandler, ai_processor: ai_service.AIService):
     """
     Processes a list of input files, normalizes their content,
     enriches it with AI, and stores it in the database.
     """
-    ai_processor = ai_service.get_ai_service()
-    db_handler = database_handler.get_database_handler()
-    
     logging.info(f"Starting ingestion for {len(file_paths)} file(s) using {type(ai_processor).__name__}...")
     total_new_records = 0
     
