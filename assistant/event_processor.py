@@ -4,7 +4,8 @@ import uuid
 import logging
 from typing import List, Dict
 from tqdm import tqdm
-from . import ai_service, database_handler
+from .ai_service import AIService
+from .database_handler import DatabaseHandler
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
@@ -46,7 +47,7 @@ def get_parser(file_path: str):
     else:
         raise ValueError(f"No parser available for file: {file_path}")
 
-def process_and_store_files(file_paths: List[str], db_handler: database_handler.DatabaseHandler, ai_processor: ai_service.AIService):
+def process_and_store_files(file_paths: List[str], db_handler: DatabaseHandler, ai_processor: AIService):
     """
     Processes a list of input files, normalizes their content,
     enriches it with AI, and stores it in the database.

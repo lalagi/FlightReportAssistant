@@ -58,10 +58,10 @@ class HuggingFaceAIService(AIService):
         return generated_text.strip('"').strip()
 
     def _get_category(self, raw_event_text: str) -> str:
-        return self.category_classifier(raw_event_text, candidate_labels=self.event_categories)['labels'][0]
+        return self.category_classifier(raw_event_text, candidate_labels=self.event_categories)['labels'][0] # Could validate the result with fuzzy matching/embedding model if needed
 
     def _get_severity(self, raw_event_text: str) -> str:
-        return self.severity_classifier(raw_event_text, candidate_labels=self.severity_levels)['labels'][0]
+        return self.severity_classifier(raw_event_text, candidate_labels=self.severity_levels)['labels'][0] # Could validate the result with fuzzy matching/embedding model if needed
 
     def _generate_summary(self, raw_event_text: str) -> str:
         prompt = self.summary_prompt_template.format(raw_event_text=raw_event_text)

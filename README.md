@@ -84,7 +84,7 @@ The active database handler can be configured under the `database` section. The 
 
 ## Usage
 
-1. **Initialize the database** (optional since ingesting does this step automatically):
+1. **Initialize the database** (optional since ingesting does this step automatically)
 
     ```bash
     python run.py init

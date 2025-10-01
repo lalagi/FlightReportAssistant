@@ -4,3 +4,5 @@ torch==2.8.0
 accelerate==0.27.2
 PyYAML==6.0.1
 tqdm==4.66.1
+pytest
+pytest-mock
