@@ -184,7 +184,7 @@ class HuggingFaceAIService(AIService):
             "recommendation_model": self.recommendation_generator.model.name_or_path,
             "processing_time_ms": round((end_time - start_time) * 1000),
             "timestamp": end_time,
-            "errors": errors
+            "errors": errors,
         }
 
         return {
