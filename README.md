@@ -9,9 +9,10 @@ The "Flight Report Assistant" is a command-line application designed to process 
 -   **Ingest Data:** Reads flight events from multiple JSON source files with different structures (e.g., `events_ops.json`, `events_tech.json`).
 -   **AI-Powered Processing:** Utilizes an AI service to:
     -   Generate a concise **summary** of the event.
-    -   Assign an **event category** (e.g., "Flight Ops", "Avionics", "Weather").
+    -   Assign an **event category** (e.g., "Flight Ops", "Avionics", "Weather", "Human Factors").
     -   Determine a **severity level** (low, medium, high, critical).
     -   Provide a **recommendation** (e.g., "monitor closely", "maintenance check required").
+    The AI models perform the categorization and severity determination by using the set of **categories** (e.g., "Flight Ops", "Avionics", "Mechanical") and **severity levels** (e.g., "low", "medium", "high", "critical") defined in the `config.yaml` file under the `ai_service` -> `labels` section as candidate labels.
 -   **Data Storage:** Stores the normalized and enriched records in a local SQLite database.
 -   **Command-Line Interface (CLI):** Offers a user-friendly CLI to interact with the stored data.
 -   **Extensible Architecture:** Designed with a pluggable architecture, allowing for easy integration of different AI providers (e.g., OpenAI, Hugging Face) or database systems (e.g., PostgreSQL) by adhering to a common interface.
@@ -83,28 +84,36 @@ The active database handler can be configured under the `database` section. The 
 
 ## Usage
 
-1. Initialize the database (optional since ingesting does this step automatically):
+1. **Initialize the database** (optional since ingesting does this step automatically):
 
     ```bash
     python run.py init
     ```
 
-2. Ingest data:
+2. **Ingest data**
+
+    Process one or more data files and store the results in the database.
     ```bash
     python run.py ingest data/event_ops.json data/event_tech.json
     ```
 
-3. Get statistics:
+3. **Get statistics**
+
+    View the number of events per category.
     ```bash
     python run.py stats category
     ```
 
-4. List reports by severity:
+4. **List reports by severity**
+
+    List all reports with a specific severity level.
     ```bash
     python run.py list --severity high
     ```
 
-5. List reports by severity:
+5. **Show a specific report**
+
+    Retrieve and display the full details of a specific report by its ID.
     ```bash
     python run.py show --id <your-report-id>
     ```

@@ -40,6 +40,9 @@ def get_parser(file_path: str):
         return parse_ops_file
     elif "tech" in os.path.basename(file_path):
         return parse_tech_file
+    # elif "other_type" in os.path.basename(file_path):
+    #     # Here we could process other types of files
+    #     pass
     else:
         raise ValueError(f"No parser available for file: {file_path}")
 
