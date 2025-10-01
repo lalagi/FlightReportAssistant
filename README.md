@@ -7,16 +7,29 @@ The "Flight Report Assistant" is a command-line application designed to process 
 ## Features
 
 -   **Ingest Data:** Reads flight events from multiple JSON source files with different structures (e.g., `events_ops.json`, `events_tech.json`).
--   **AI-Powered Processing:** Utilizes an AI service to:
+-   **AI-Powered Processing:** Utilizes an AI service to analyze and structure the raw event text:
     -   Generate a concise **summary** of the event.
-    -   Assign an **event category** (e.g., "Flight Ops", "Avionics", "Weather", "Human Factors").
-    -   Determine a **severity level** (low, medium, high, critical).
+    -   Assign an **event category**. The AI classifies each event into one of the predefined categories from `config.yaml` to ensure consistency.
+        ```yaml
+        categories:
+          - "Flight Ops"
+          - "Avionics"
+          - "Weather"
+          - "Human Factors"
+          - "Mechanical"
+        ```
+    -   Determine a **severity level**. Similarly, the severity is determined by selecting from a controlled list of labels.
+        ```yaml
+        severities:
+          - "low"
+          - "medium"
+          - "high"
+          - "critical"
+        ```
     -   Provide a **recommendation** (e.g., "monitor closely", "maintenance check required").
-    The AI models perform the categorization and severity determination by using the set of **categories** (e.g., "Flight Ops", "Avionics", "Mechanical") and **severity levels** (e.g., "low", "medium", "high", "critical") defined in the `config.yaml` file under the `ai_service` -> `labels` section as candidate labels.
 -   **Data Storage:** Stores the normalized and enriched records in a local SQLite database.
 -   **Command-Line Interface (CLI):** Offers a user-friendly CLI to interact with the stored data.
 -   **Extensible Architecture:** Designed with a pluggable architecture, allowing for easy integration of different AI providers (e.g., OpenAI, Hugging Face) or database systems (e.g., PostgreSQL) by adhering to a common interface.
-
 ## Architecture
 
 The application is built with a modular and extensible architecture, separating concerns into distinct components:
@@ -125,4 +138,24 @@ To run the unit tests, ensure you have pytest and pytest-mock installed, which a
 Execute the following command from the project's root directory:
 ```bash
 pytest
+```
+
+## Code Style and Quality
+
+This project uses [Ruff](https://github.com/astral-sh/ruff) to enforce a consistent code style and to ensure code quality. 
+
+### Checking Code
+
+To check the code for any linting errors or style violations, run the following command from the project's root directory:
+
+```bash
+ruff check .
+```
+
+### Checking Code
+
+To automatically format all Python files according to the project's style guide, run:
+
+```bash
+ruff format .
 ```
