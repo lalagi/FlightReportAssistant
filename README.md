@@ -93,7 +93,15 @@ To switch the AI service, modify the `active_service` key under `ai_service`.
 
 ### Database
 
-The active database handler can be configured under the `database` section. The default is SQLite.
+The active database handler can be configured under the `database` section in the `config.yaml` file. 
+
+```yaml
+database:
+  active_handler: sqlite
+
+  sqlite:
+    db_file: "flight_reports.db"
+```
 
 ## Usage
 
@@ -172,4 +180,3 @@ While the current implementation serves as a functional proof-of-concept, severa
 
 -   **Sophisticated Prompt Management:** Storing prompt templates directly in `config.yaml` is practical for simple cases. A more robust solution would involve a dedicated prompt management system. This could include:
     -   Using a templating engine like Jinja2 for more complex prompt logic.
-    -   Implementing a version-controlled prompt registry to track changes and A/B test different prompt strategies.
