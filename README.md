@@ -117,3 +117,12 @@ The active database handler can be configured under the `database` section. The 
     ```bash
     python run.py show --id <your-report-id>
     ```
+
+## Testing
+
+To run the unit tests, ensure you have pytest and pytest-mock installed, which are included in the requirements.txt file.
+
+Execute the following command from the project's root directory:
+```bash
+pytest
+```
