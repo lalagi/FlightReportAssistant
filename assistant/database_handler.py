@@ -5,14 +5,17 @@ from abc import ABC, abstractmethod
 import yaml
 from contextlib import contextmanager
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+)
+
 
 class DatabaseHandler(ABC):
     """
     Abstract Base Class for database operations.
     It defines the interface that any storage implementation must follow.
     """
-    
+
     @abstractmethod
     def init_db(self):
         """Initializes the database."""
@@ -48,14 +51,15 @@ class SQLiteHandler(DatabaseHandler):
     """
     A concrete implementation of the DatabaseHandler for SQLite.
     """
+
     def __init__(self, db_file: str = "flight_reports.db"):
         self.db_file = db_file
         self._connection = None
         if self.db_file == ":memory:":
             # For in-memory, create a single, persistent connection
             self._connection = sqlite3.connect(":memory:")
-        
-        self.init_db() # Ensure DB is created on instantiation
+
+        self.init_db()  # Ensure DB is created on instantiation
 
     @contextmanager
     def _managed_connection(self):
@@ -88,33 +92,43 @@ class SQLiteHandler(DatabaseHandler):
             """)
             conn.commit()
         logging.info("Database schema is ready.")
-    
+
     def add_event(self, report: Dict[str, Any]):
         """Adds a new processed report to the database."""
         try:
             with self._managed_connection() as conn:
                 cursor = conn.cursor()
-                cursor.execute("""
+                cursor.execute(
+                    """
                 INSERT INTO flight_reports (id, timestamp, source, raw_event_text, summary, category, severity, recommendation, model_meta)
                 VALUES (:id, :timestamp, :source, :raw_event_text, :summary, :category, :severity, :recommendation, :model_meta)
-                """, report)
+                """,
+                    report,
+                )
                 conn.commit()
         except sqlite3.IntegrityError:
-            logging.debug(f"Duplicate record not added: {report['raw_event_text'][:50]}...")
+            logging.debug(
+                f"Duplicate record not added: {report['raw_event_text'][:50]}..."
+            )
             pass
 
     def report_exists(self, timestamp: str, raw_event_text: str) -> bool:
         """Checks if a report already exists in the database."""
         with self._managed_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute("SELECT 1 FROM flight_reports WHERE timestamp = ? AND raw_event_text = ?", (timestamp, raw_event_text))
+            cursor.execute(
+                "SELECT 1 FROM flight_reports WHERE timestamp = ? AND raw_event_text = ?",
+                (timestamp, raw_event_text),
+            )
             return cursor.fetchone() is not None
 
     def get_stats_by_category(self) -> List[Tuple[str, int]]:
         """Returns the count of events for each category."""
         with self._managed_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute("SELECT category, COUNT(*) FROM flight_reports GROUP BY category")
+            cursor.execute(
+                "SELECT category, COUNT(*) FROM flight_reports GROUP BY category"
+            )
             return cursor.fetchall()
 
     def list_reports_by_severity(self, severity: str) -> List[Dict[str, Any]]:
@@ -122,7 +136,10 @@ class SQLiteHandler(DatabaseHandler):
         with self._managed_connection() as conn:
             conn.row_factory = sqlite3.Row
             cursor = conn.cursor()
-            cursor.execute("SELECT id, timestamp, category, summary, recommendation FROM flight_reports WHERE severity = ?", (severity,))
+            cursor.execute(
+                "SELECT id, timestamp, category, summary, recommendation FROM flight_reports WHERE severity = ?",
+                (severity,),
+            )
             rows = cursor.fetchall()
             return [dict(row) for row in rows]
 
@@ -135,10 +152,11 @@ class SQLiteHandler(DatabaseHandler):
             row = cursor.fetchone()
             return dict(row) if row else None
 
-def load_config(config_path: str = 'config.yaml') -> Dict[str, Any]:
+
+def load_config(config_path: str = "config.yaml") -> Dict[str, Any]:
     """Loads the YAML configuration file."""
     try:
-        with open(config_path, 'r') as f:
+        with open(config_path, "r") as f:
             return yaml.safe_load(f)
     except FileNotFoundError:
         logging.error(f"Configuration file not found at {config_path}")
@@ -147,16 +165,17 @@ def load_config(config_path: str = 'config.yaml') -> Dict[str, Any]:
         logging.error(f"Error parsing YAML file: {e}")
         raise
 
+
 def get_database_handler() -> DatabaseHandler:
     """
     Factory function to get the current database handler based on config.
     """
     config = load_config()
-    handler_type = config.get('database', {}).get('active_handler', 'sqlite')
+    handler_type = config.get("database", {}).get("active_handler", "sqlite")
 
-    if handler_type == 'sqlite':
-        db_config = config.get('database', {}).get('sqlite', {})
-        db_file = db_config.get('db_file', 'flight_reports.db')
+    if handler_type == "sqlite":
+        db_config = config.get("database", {}).get("sqlite", {})
+        db_file = db_config.get("db_file", "flight_reports.db")
         return SQLiteHandler(db_file=db_file)
     # Here you could add other database handlers as well
     # elif handler_type == 'postgresql':

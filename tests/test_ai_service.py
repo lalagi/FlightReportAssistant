@@ -1,10 +1,12 @@
 import pytest
 from assistant.ai_service import MockAIService, HuggingFaceAIService
 
+
 @pytest.fixture
 def mock_service():
     """Fixture to provide a MockAIService instance."""
     return MockAIService()
+
 
 def test_mock_ai_mechanical(mock_service):
     """Test that 'engine' keyword is classified as Mechanical."""
@@ -12,18 +14,21 @@ def test_mock_ai_mechanical(mock_service):
     assert result["category"] == "Mechanical"
     assert result["severity"] == "high"
 
+
 def test_mock_ai_avionics(mock_service):
     """Test that 'autopilot' is classified as Avionics."""
     result = mock_service.process_text("Autopilot disengaged unexpectedly.")
     assert result["category"] == "Avionics"
     assert result["severity"] == "medium"
 
+
 def test_mock_ai_human_factors(mock_service):
     """Test that 'pilot' is classified as Human Factors."""
     result = mock_service.process_text("The pilot missed a checklist item.")
     assert result["category"] == "Human Factors"
     assert result["severity"] == "low"
-    
+
+
 def test_mock_ai_critical_failure(mock_service):
     """Test that 'bird strike' is classified as Critical Failure."""
     result = mock_service.process_text("A bird strike occurred on the right wing.")
@@ -34,11 +39,11 @@ def test_mock_ai_critical_failure(mock_service):
 @pytest.fixture
 def mock_pipeline(mocker):
     """Fixture to mock the transformers.pipeline function."""
-    
+
     class MockModel:
         def __init__(self, name):
             self.name_or_path = name
-    
+
     class MockTokenizer:
         eos_token_id = 50256
 
@@ -55,7 +60,9 @@ def mock_pipeline(mocker):
                 return {"labels": [kwargs.get("candidate_labels", ["default"])[0]]}
             elif "text-generation" in self.task_type:
                 prompt = args[0]
-                return [{"generated_text": f"{prompt}Mocked Response <|endofassistant|>"}]
+                return [
+                    {"generated_text": f"{prompt}Mocked Response <|endofassistant|>"}
+                ]
             return None
 
     # This dictionary will hold our mock pipeline instances
@@ -65,7 +72,7 @@ def mock_pipeline(mocker):
         # Determine the task: it can be a positional or keyword argument
         task = args[0] if args else kwargs.get("task")
         model = kwargs.get("model")
-        
+
         # Create a unique key for this model/task combo to reuse mocks
         key = (task, model)
         if key not in mock_pipelines:
@@ -87,18 +94,21 @@ def hf_service(mock_pipeline):
         event_categories=["Avionics", "Mechanical"],
         severity_levels=["low", "medium", "high"],
         summary_prompt_template="Summarize: {raw_event_text}",
-        recommendation_prompt_template="Recommend for {raw_event_text}, cat: {category}, sev: {severity}"
+        recommendation_prompt_template="Recommend for {raw_event_text}, cat: {category}, sev: {severity}",
     )
 
-class TestHuggingFaceAIService:
 
+class TestHuggingFaceAIService:
     def test_service_initialization(self, hf_service):
         """Test that the service and its pipelines are initialized correctly."""
         assert hf_service is not None
         assert hf_service.summary_generator.model.name_or_path == "summary/model"
         assert hf_service.category_classifier.model.name_or_path == "category/model"
         assert hf_service.severity_classifier.model.name_or_path == "severity/model"
-        assert hf_service.recommendation_generator.model.name_or_path == "recommendation/model"
+        assert (
+            hf_service.recommendation_generator.model.name_or_path
+            == "recommendation/model"
+        )
 
     def test_clean_generated_text(self, hf_service):
         """Test the internal text cleaning logic."""
@@ -115,8 +125,11 @@ class TestHuggingFaceAIService:
         # Verify that the classifier was called with the correct arguments
         classifier_calls = hf_service.category_classifier.call_history
         assert len(classifier_calls) == 1
-        assert classifier_calls[0]['args'][0] == "some text"
-        assert classifier_calls[0]['kwargs']['candidate_labels'] == ["Avionics", "Mechanical"]
+        assert classifier_calls[0]["args"][0] == "some text"
+        assert classifier_calls[0]["kwargs"]["candidate_labels"] == [
+            "Avionics",
+            "Mechanical",
+        ]
 
     def test_generate_summary(self, hf_service):
         """Test the summary generation call and prompt formatting."""
@@ -125,24 +138,29 @@ class TestHuggingFaceAIService:
         # Verify the prompt was formatted correctly
         generator_calls = hf_service.summary_generator.call_history
         assert len(generator_calls) == 1
-        assert generator_calls[0]['args'][0] == "Summarize: test event"
+        assert generator_calls[0]["args"][0] == "Summarize: test event"
 
     def test_generate_recommendation(self, hf_service):
         """Test the recommendation generation call and prompt formatting."""
-        recommendation = hf_service._generate_recommendation("another event", "Avionics", "high")
+        recommendation = hf_service._generate_recommendation(
+            "another event", "Avionics", "high"
+        )
         assert recommendation == "Mocked Response"
         # Verify the prompt was formatted correctly
         generator_calls = hf_service.recommendation_generator.call_history
         assert len(generator_calls) == 1
-        assert generator_calls[0]['args'][0] == "Recommend for another event, cat: Avionics, sev: high"
+        assert (
+            generator_calls[0]["args"][0]
+            == "Recommend for another event, cat: Avionics, sev: high"
+        )
 
     def test_full_process_text(self, hf_service):
         """Test the end-to-end process_text method."""
         result = hf_service.process_text("A full test event.")
-        
+
         assert result["summary"] == "Mocked Response"
         assert result["category"] == "Avionics"  # Mock returns the first candidate
-        assert result["severity"] == "low"      # Mock returns the first candidate
+        assert result["severity"] == "low"  # Mock returns the first candidate
         assert result["recommendation"] == "Mocked Response"
         assert "processing_time_ms" in result["model_meta"]
         assert "category/model" in result["model_meta"]
