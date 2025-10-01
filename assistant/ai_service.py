@@ -139,23 +139,41 @@ class HuggingFaceAIService(AIService):
 
     def process_text(self, raw_event_text: str) -> Dict[str, Any]:
         start_time = time.time()
+        results = {}
+        errors = {}
 
         try:
-            category = self._get_category(raw_event_text)
-            severity = self._get_severity(raw_event_text)
-            summary = self._generate_summary(raw_event_text)
-            recommendation = self._generate_recommendation(
-                raw_event_text, category, severity
-            )
+            results["category"] = self._get_category(raw_event_text)
         except Exception as e:
-            logging.error(f"Error processing text with AI model: {e}")
-            return {
-                "summary": "AI processing failed.",
-                "category": "Unknown",
-                "severity": "Unknown",
-                "recommendation": "Manual review required.",
-                "model_meta": str({"error": str(e)}),
-            }
+            logging.error(f"Could not get category: {e}")
+            results["category"] = "Unknown"
+            errors["category_error"] = str(e)
+
+        try:
+            results["severity"] = self._get_severity(raw_event_text)
+        except Exception as e:
+            logging.error(f"Could not get severity: {e}")
+            results["severity"] = "Unknown"
+            errors["severity_error"] = str(e)
+
+        try:
+            results["summary"] = self._generate_summary(raw_event_text)
+        except Exception as e:
+            logging.error(f"Could not generate summary: {e}")
+            results["summary"] = "Summary generation failed."
+            errors["summary_error"] = str(e)
+
+        if "category" in results and "severity" in results:
+            try:
+                results["recommendation"] = self._generate_recommendation(
+                    raw_event_text, results["category"], results["severity"]
+                )
+            except Exception as e:
+                logging.error(f"Could not generate recommendation: {e}")
+                results["recommendation"] = "Recommendation generation failed."
+                errors["recommendation_error"] = str(e)
+        else:
+            results["recommendation"] = "Not attempted due to prior errors."
 
         end_time = time.time()
 
@@ -166,13 +184,14 @@ class HuggingFaceAIService(AIService):
             "recommendation_model": self.recommendation_generator.model.name_or_path,
             "processing_time_ms": round((end_time - start_time) * 1000),
             "timestamp": end_time,
+            "errors": errors
         }
 
         return {
-            "summary": summary,
-            "category": category,
-            "severity": severity,
-            "recommendation": recommendation,
+            "summary": results.get("summary"),
+            "category": results.get("category"),
+            "severity": results.get("severity"),
+            "recommendation": results.get("recommendation"),
             "model_meta": str(model_meta),
         }
 
