@@ -34,8 +34,8 @@ The "Flight Report Assistant" is a command-line application designed to process 
 
 The application is built with a modular and extensible architecture, separating concerns into distinct components:
 
+-   **Entry point:** `run.py` is the main entry point of the application.
 -   **User Interface (CLI):** `assistant/cli.py` provides the command-line interface for user interaction.
--   **Orchestrator:** `run.py` is the main entry point of the application.
 -   **Event Processor:** `assistant/event_processor.py` handles the logic for reading, parsing, and processing the input files.
 -   **Pluggable AI Service:** `assistant/ai_service.py` defines an abstract interface for AI services and includes a mock implementation for testing and a Hugging Face implementation for production.
 -   **Pluggable Database Handler:** `assistant/database_handler.py` defines an interface for database operations and provides an SQLite implementation.
