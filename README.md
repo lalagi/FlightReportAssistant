@@ -159,3 +159,17 @@ To automatically format all Python files according to the project's style guide,
 ```bash
 ruff format .
 ```
+
+## Future Improvements
+
+While the current implementation serves as a functional proof-of-concept, several areas could be enhanced:
+
+-   **Database Normalization:** The current single-table SQLite schema was chosen for simplicity. For larger data set application, I would split the table into multiple ones. This would reduce data redundancy and increase overall efficiency.
+
+-   **Advanced Model & Fine-Tuning:** The models selected in the configuration are effective general-purpose choices. However, for optimal performance, further steps could be taken:
+    -   **Fine-Tuning:** The classification model (`facebook/bart-large-mnli`) could be fine-tuned on a domain-specific dataset of flight reports. Techniques like **LoRA (Low-Rank Adaptation)** would allow for efficient tuning, significantly improving the model's accuracy in understanding aviation-specific terminology and context.
+    -   **Model Selection:** A more thorough evaluation could be conducted to select smaller, faster, or more accurate models for each specific task (summary, classification, recommendation).
+
+-   **Sophisticated Prompt Management:** Storing prompt templates directly in `config.yaml` is practical for simple cases. A more robust solution would involve a dedicated prompt management system. This could include:
+    -   Using a templating engine like Jinja2 for more complex prompt logic.
+    -   Implementing a version-controlled prompt registry to track changes and A/B test different prompt strategies.
