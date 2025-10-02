@@ -58,7 +58,6 @@ def stats(ctx, query_type):
 @click.option(
     "--severity",
     required=True,
-    type=click.Choice(["low", "medium", "high", "critical"], case_sensitive=False),
 )
 @click.pass_context
 def list(ctx, severity):
