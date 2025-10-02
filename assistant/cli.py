@@ -5,7 +5,18 @@ from . import database_handler, event_processor, ai_service
 class AppContext:
     def __init__(self):
         self.db_handler = database_handler.get_database_handler()
-        self.ai_service = ai_service.get_ai_service()
+        self._ai_service = None
+
+    @property
+    def ai_service(self):
+        """
+        AI service property with lazy loading.
+        It only initializes the AI service when it's first accessed.
+        """
+        if self._ai_service is None:
+            click.echo("Initializing AI service (this may take a moment)...")
+            self._ai_service = ai_service.get_ai_service()
+        return self._ai_service
 
 
 @click.group()
@@ -30,6 +41,8 @@ def ingest(ctx, files):
     if not files:
         click.echo("Error: Please provide at least one file path.", err=True)
         return
+    # This is the only command that will access the ai_service property
+    # and trigger the model loading.
     event_processor.process_and_store_files(
         files, ctx.obj.db_handler, ctx.obj.ai_service
     )
