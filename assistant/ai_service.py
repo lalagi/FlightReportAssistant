@@ -12,6 +12,12 @@ logging.basicConfig(
 transformers_logging.set_verbosity_error()
 
 
+class ServiceInitializationError(Exception):
+    """Custom exception for errors during AI service initialization."""
+
+    pass
+
+
 class AIService(ABC):
     """
     Abstract Base Class (Interface) for AI services.
@@ -46,34 +52,40 @@ class HuggingFaceAIService(AIService):
         logging.info(
             "Initializing HuggingFaceAIService with dedicated models for each task..."
         )
+        try:
+            logging.info(f"Loading summary model: {summary_model}")
+            self.summary_generator = pipeline(
+                "text-generation",
+                model=summary_model,
+                torch_dtype="auto",
+                device_map="auto",
+                trust_remote_code=True,
+            )
 
-        logging.info(f"Loading summary model: {summary_model}")
-        self.summary_generator = pipeline(
-            "text-generation",
-            model=summary_model,
-            torch_dtype="auto",
-            device_map="auto",
-            trust_remote_code=True,
-        )
+            logging.info(f"Loading category classifier: {category_model}")
+            self.category_classifier = pipeline(
+                "zero-shot-classification", model=category_model
+            )
 
-        logging.info(f"Loading category classifier: {category_model}")
-        self.category_classifier = pipeline(
-            "zero-shot-classification", model=category_model
-        )
+            logging.info(f"Loading severity classifier: {severity_model}")
+            self.severity_classifier = pipeline(
+                "zero-shot-classification", model=severity_model
+            )
 
-        logging.info(f"Loading severity classifier: {severity_model}")
-        self.severity_classifier = pipeline(
-            "zero-shot-classification", model=severity_model
-        )
-
-        logging.info(f"Loading recommendation model: {recommendation_model}")
-        self.recommendation_generator = pipeline(
-            "text-generation",
-            model=recommendation_model,
-            torch_dtype="auto",
-            device_map="auto",
-            trust_remote_code=True,
-        )
+            logging.info(f"Loading recommendation model: {recommendation_model}")
+            self.recommendation_generator = pipeline(
+                "text-generation",
+                model=recommendation_model,
+                torch_dtype="auto",
+                device_map="auto",
+                trust_remote_code=True,
+            )
+        except Exception as e:
+            # Catch any error during model loading (network, memory, not found)
+            logging.error(f"Fatal error during model initialization: {e}")
+            raise ServiceInitializationError(
+                f"Could not initialize one or more models: {e}"
+            ) from e
 
         self.event_categories = event_categories
         self.severity_levels = severity_levels
@@ -90,27 +102,42 @@ class HuggingFaceAIService(AIService):
         return generated_text.strip('"').strip()
 
     def _get_category(self, raw_event_text: str) -> str:
-        return self.category_classifier(
-            raw_event_text, candidate_labels=self.event_categories
-        )["labels"][
-            0
-        ]  # Could validate the result with fuzzy matching/embedding model if needed
+        try:
+            result = self.category_classifier(
+                raw_event_text, candidate_labels=self.event_categories
+            )
+            return result["labels"][0] # Could validate the result with fuzzy matching/embedding model if needed
+        except (KeyError, IndexError) as e:
+            logging.warning(
+                f"Could not parse category from model output: {e}. Defaulting to 'Unknown'."
+            )
+            return "Unknown"
 
     def _get_severity(self, raw_event_text: str) -> str:
-        return self.severity_classifier(
-            raw_event_text, candidate_labels=self.severity_levels
-        )["labels"][
-            0
-        ]  # Could validate the result with fuzzy matching/embedding model if needed
+        try:
+            result = self.severity_classifier(
+                raw_event_text, candidate_labels=self.severity_levels
+            )
+            return result["labels"][0] # Could validate the result with fuzzy matching/embedding model if needed
+        except (KeyError, IndexError) as e:
+            logging.warning(
+                f"Could not parse severity from model output: {e}. Defaulting to 'Unknown'."
+            )
+            return "Unknown"
 
     def _generate_summary(self, raw_event_text: str) -> str:
         prompt = self.summary_prompt_template.format(raw_event_text=raw_event_text)
-        result = self.summary_generator(
-            prompt,
-            max_new_tokens=30,
-            pad_token_id=self.summary_generator.tokenizer.eos_token_id,
-        )
-        summary = self._clean_generated_text(result[0]["generated_text"], prompt)
+        summary = ""
+        try:
+            result = self.summary_generator(
+                prompt,
+                max_new_tokens=30,
+                pad_token_id=self.summary_generator.tokenizer.eos_token_id,
+            )
+            summary = self._clean_generated_text(result[0]["generated_text"], prompt)
+        except (KeyError, IndexError) as e:
+            logging.warning(f"Could not parse summary from model output: {e}.")
+
         if not summary:
             logging.warning(
                 f"Could not generate summary for text: '{raw_event_text[:100]}...'. Using fallback."
@@ -124,12 +151,19 @@ class HuggingFaceAIService(AIService):
         prompt = self.recommendation_prompt_template.format(
             raw_event_text=raw_event_text, category=category, severity=severity
         )
-        result = self.recommendation_generator(
-            prompt,
-            max_new_tokens=40,
-            pad_token_id=self.recommendation_generator.tokenizer.eos_token_id,
-        )
-        recommendation = self._clean_generated_text(result[0]["generated_text"], prompt)
+        recommendation = ""
+        try:
+            result = self.recommendation_generator(
+                prompt,
+                max_new_tokens=40,
+                pad_token_id=self.recommendation_generator.tokenizer.eos_token_id,
+            )
+            recommendation = self._clean_generated_text(
+                result[0]["generated_text"], prompt
+            )
+        except (KeyError, IndexError) as e:
+            logging.warning(f"Could not parse recommendation from model output: {e}.")
+
         if not recommendation:
             logging.warning(
                 f"Could not generate recommendation for text: '{raw_event_text[:100]}...'. Using fallback."
@@ -145,35 +179,42 @@ class HuggingFaceAIService(AIService):
         try:
             results["category"] = self._get_category(raw_event_text)
         except Exception as e:
-            logging.error(f"Could not get category: {e}")
+            logging.error(f"Category classification failed with a runtime error: {e}")
             results["category"] = "Unknown"
             errors["category_error"] = str(e)
 
         try:
             results["severity"] = self._get_severity(raw_event_text)
         except Exception as e:
-            logging.error(f"Could not get severity: {e}")
+            logging.error(f"Severity classification failed with a runtime error: {e}")
             results["severity"] = "Unknown"
             errors["severity_error"] = str(e)
 
         try:
             results["summary"] = self._generate_summary(raw_event_text)
         except Exception as e:
-            logging.error(f"Could not generate summary: {e}")
+            logging.error(f"Summary generation failed with a runtime error: {e}")
             results["summary"] = "Summary generation failed."
             errors["summary_error"] = str(e)
 
-        if "category" in results and "severity" in results:
+        if (
+            results.get("category") != "Unknown"
+            and results.get("severity") != "Unknown"
+        ):
             try:
                 results["recommendation"] = self._generate_recommendation(
                     raw_event_text, results["category"], results["severity"]
                 )
             except Exception as e:
-                logging.error(f"Could not generate recommendation: {e}")
+                logging.error(
+                    f"Recommendation generation failed with a runtime error: {e}"
+                )
                 results["recommendation"] = "Recommendation generation failed."
                 errors["recommendation_error"] = str(e)
         else:
-            results["recommendation"] = "Not attempted due to prior errors."
+            results["recommendation"] = (
+                "Not attempted due to prior classification errors."
+            )
 
         end_time = time.time()
 
@@ -311,24 +352,33 @@ def get_ai_service() -> AIService:
     logging.info(f"Selected AI service type from config: {service_type}")
 
     if service_type == "huggingface":
-        hf_config = service_config["huggingface"]
-        models = hf_config["models"]
-        prompts = hf_config.get("prompts", {})
+        try:
+            hf_config = service_config["huggingface"]
+            models = hf_config["models"]
+            prompts = hf_config.get("prompts", {})
 
-        return HuggingFaceAIService(
-            summary_model=models["summary_model"],
-            category_model=models["category_model"],
-            severity_model=models["severity_model"],
-            recommendation_model=models["recommendation_model"],
-            event_categories=service_config["labels"]["categories"],
-            severity_levels=service_config["labels"]["severities"],
-            summary_prompt_template=prompts.get(
-                "summarization", "Summarize: {raw_event_text}"
-            ),
-            recommendation_prompt_template=prompts.get(
-                "recommendation", "Recommend for: {raw_event_text}"
-            ),
-        )
+            return HuggingFaceAIService(
+                summary_model=models["summary_model"],
+                category_model=models["category_model"],
+                severity_model=models["severity_model"],
+                recommendation_model=models["recommendation_model"],
+                event_categories=service_config["labels"]["categories"],
+                severity_levels=service_config["labels"]["severities"],
+                summary_prompt_template=prompts.get(
+                    "summarization", "Summarize: {raw_event_text}"
+                ),
+                recommendation_prompt_template=prompts.get(
+                    "recommendation", "Recommend for: {raw_event_text}"
+                ),
+            )
+        except ServiceInitializationError as e:
+            logging.error(f"Could not start HuggingFaceAIService: {e}. Aborting.")
+            raise
+        except KeyError as e:
+            logging.error(
+                f"Missing a required key in config.yaml for huggingface service: {e}. Aborting."
+            )
+            raise
     elif service_type == "mock":
         return MockAIService()
     else:
