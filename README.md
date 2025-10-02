@@ -18,7 +18,7 @@ The "Flight Report Assistant" is a command-line application designed to process 
           - "Human Factors"
           - "Mechanical"
         ```
-    -   Determine a **severity level**. Similarly, the severity is determined by selecting from a list of labels in the `config.yaml`.
+    -   Determine a **severity level**. Similarly, it assigns a severity level using one of the predefined labels in `config.yaml`.
         ```yaml
         severities:
           - "low"
