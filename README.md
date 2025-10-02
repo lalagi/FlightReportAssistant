@@ -2,14 +2,14 @@
 
 ## Overview
 
-The "Flight Report Assistant" is a command-line application designed to process various flight-related events from text-based inputs. Using AI models, it summarizes, structures, and categorizes these events, creating insightful reports for training or maintenance purposes. The application can handle heterogeneous text formats from sources like instructor pilot notes, onboard event logs, maintenance reports, and simulator observations.
+The "Flight Report Assistant" is a command-line application designed to process various flight-related events from text-based inputs. Using AI model(s), it summarizes, structures, and categorizes these events, creating insightful reports for training or maintenance purposes. The application can handle heterogeneous text formats from sources like instructor pilot notes, onboard event logs, maintenance reports, and simulator observations.
 
 ## Features
 
 -   **Ingest Data:** Reads flight events from multiple JSON source files with different structures (e.g., `events_ops.json`, `events_tech.json`).
 -   **AI-Powered Processing:** Utilizes an AI service to analyze and structure the raw event text:
     -   Generate a concise **summary** of the event.
-    -   Assign an **event category**. The AI classifies each event into one of the predefined categories from `config.yaml` to ensure consistency.
+    -   Assign an **event category**. The AI classifies each event into one of the predefined categories from `config.yaml`.
         ```yaml
         categories:
           - "Flight Ops"
@@ -18,7 +18,7 @@ The "Flight Report Assistant" is a command-line application designed to process 
           - "Human Factors"
           - "Mechanical"
         ```
-    -   Determine a **severity level**. Similarly, the severity is determined by selecting from a controlled list of labels.
+    -   Determine a **severity level**. Similarly, the severity is determined by selecting from a list of labels in the `config.yaml`.
         ```yaml
         severities:
           - "low"
@@ -26,8 +26,8 @@ The "Flight Report Assistant" is a command-line application designed to process 
           - "high"
           - "critical"
         ```
-    -   Provide a **recommendation** (e.g., "monitor closely", "maintenance check required").
--   **Data Storage:** Stores the normalized and enriched records in a local SQLite database.
+    -   Provide a concise **recommendation** that helps resolve or mitigate the issue, either immediately or in the future.
+-   **Data Storage:** Stores the normalized and enriched records in a database.
 -   **Command-Line Interface (CLI):** Offers a user-friendly CLI to interact with the stored data.
 -   **Extensible Architecture:** Designed with a pluggable architecture, allowing for easy integration of different AI providers (e.g., OpenAI, Hugging Face) or database systems (e.g., PostgreSQL) by adhering to a common interface.
 ## Architecture
@@ -129,7 +129,7 @@ database:
 
     List all reports with a specific severity level.
     ```bash
-    python run.py list --severity high
+    python run.py list --severity <severity-level>
     ```
 
 5. **Show a specific report**
@@ -179,3 +179,4 @@ While the current implementation serves as a functional proof-of-concept, severa
     -   **Model Selection:** A more thorough evaluation could be conducted to select smaller, faster, or more accurate models for each specific task (summary, classification, recommendation).
 
 -   **Sophisticated Prompt Management:** Storing prompt templates directly in `config.yaml` is practical for simple cases. Using a templating engine like Jinja2 for more complex prompt logic might be beneficial.
+

@@ -106,7 +106,9 @@ class HuggingFaceAIService(AIService):
             result = self.category_classifier(
                 raw_event_text, candidate_labels=self.event_categories
             )
-            return result["labels"][0] # Could validate the result with fuzzy matching/embedding model if needed
+            return result["labels"][
+                0
+            ]  # Could validate the result with fuzzy matching/embedding model if needed
         except (KeyError, IndexError) as e:
             logging.warning(
                 f"Could not parse category from model output: {e}. Defaulting to 'Unknown'."
@@ -118,7 +120,9 @@ class HuggingFaceAIService(AIService):
             result = self.severity_classifier(
                 raw_event_text, candidate_labels=self.severity_levels
             )
-            return result["labels"][0] # Could validate the result with fuzzy matching/embedding model if needed
+            return result["labels"][
+                0
+            ]  # Could validate the result with fuzzy matching/embedding model if needed
         except (KeyError, IndexError) as e:
             logging.warning(
                 f"Could not parse severity from model output: {e}. Defaulting to 'Unknown'."
