@@ -22,7 +22,7 @@ ai_service:
       # Available variables: {raw_event_text}, {category}, {severity}
       recommendation: >-
         <|user|>
-        Analyze the flight report and provide one concise recommendation.
+        Analyze the flight report and provide one sentence concise recommendation that can solve the problem.
         Event: "{raw_event_text}"
         Category: {category}
         Severity: {severity}
