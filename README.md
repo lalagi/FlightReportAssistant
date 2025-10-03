@@ -97,7 +97,7 @@ To switch the AI service, modify the `active_service` key under `ai_service`.
       active_service: mock
     ```
 
--   **Hugging Face Service:** Uses pre-trained models from the Hugging Face Hub. Make sure to specify the model names and other parameters.
+-   **Hugging Face Service:** Uses pre-trained models from the Hugging Face Hub. Make sure to specify the model names.
     ```yaml
     ai_service:
       active_service: huggingface
